@@ -58,7 +58,7 @@ def load_model():
     except Exception as e:
         st.error(f"An error occurred while loading the model: {str(e)}")
 
-    return mode
+    return model
 
 # Load the model
 model = load_model()
