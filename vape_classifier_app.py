@@ -49,8 +49,8 @@ def load_model():
             return None
 
     try:
-        # Load the model state dictionary with weights_only=True
-        model.load_state_dict(torch.load('custom_ensemble_model.pth', map_location=torch.device('cpu'), weights_only=True))
+        # Load the model state dictionary without weights_only
+        model.load_state_dict(torch.load('custom_ensemble_model.pth', map_location=torch.device('cpu')))
         model.eval()  # Set the model to evaluation mode
         st.success("Model loaded successfully.")
     except FileNotFoundError:
@@ -58,7 +58,7 @@ def load_model():
     except Exception as e:
         st.error(f"An error occurred while loading the model: {str(e)}")
 
-    return model
+    return mode
 
 # Load the model
 model = load_model()
