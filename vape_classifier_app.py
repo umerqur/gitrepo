@@ -1,85 +1,61 @@
+import os
 import streamlit as st
 import torch
 import torch.nn as nn
-import torchvision.transforms as transforms
-from PIL import Image
+import requests  # Import requests for downloading files
 from transformers import ViTForImageClassification
-import requests  # Make sure to import requests
-
-# Function to download the model from Google Drive
-def download_file_from_google_drive(file_id, destination):
-    URL = f'https://drive.google.com/uc?id={file_id}'
-    response = requests.get(URL)
-    with open(destination, 'wb') as f:
-        f.write(response.content)
 
 # Define the CustomEnsemble class using ViT model
 class CustomEnsemble(nn.Module):
     def __init__(self):
         super(CustomEnsemble, self).__init__()
-
-        # Load ViT model with pretrained weights from JFT-300M
         self.model_vit = ViTForImageClassification.from_pretrained(
             'google/vit-large-patch16-224',
-            num_labels=1,  # Set number of labels for binary classification
+            num_labels=1,
             ignore_mismatched_sizes=True
         )
-
-        # Add Dropout layer with a probability of 0.3 (as in training)
         self.dropout = nn.Dropout(p=0.3)
 
     def forward(self, x):
-        # Get predictions from ViT model
         outputs = self.model_vit(x).logits
         outputs = self.dropout(outputs)
         return outputs
 
-# Define the same transformations used during training
-transform = transforms.Compose([
-    transforms.Resize((224, 224)),  # Resize to match model's input size
-    transforms.ToTensor(),           # Convert image to tensor
-    transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])  # Normalize for ViT
-])
+# Function to download the model from Google Drive
+def download_file_from_google_drive(file_id, destination):
+    URL = f'https://drive.google.com/uc?id={file_id}'
+    response = requests.get(URL)
+    
+    if response.status_code == 200:
+        with open(destination, 'wb') as f:
+            f.write(response.content)
+        st.success("Model downloaded successfully.")
+    else:
+        st.error("Error downloading the file. Please check the file ID or permissions.")
 
 # Load the trained model
 @st.cache_resource(allow_output_mutation=True)
 def load_model():
     model = CustomEnsemble()
-    # Use the file ID to download the model file from Google Drive
-    download_file_from_google_drive('1aeY1XyB1SgVhP4iHKUHBRVHRtPDK1TFe', 'custom_ensemble_model.pth')
-    model.load_state_dict(torch.load('custom_ensemble_model.pth', map_location=torch.device('cpu')))
-    model.eval()  # Set the model to evaluation mode
+    
+    # Check if the model file already exists
+    if not os.path.exists('custom_ensemble_model.pth'):
+        st.info("Downloading model...")
+        download_file_from_google_drive('1aeY1XyB1SgVhP4iHKUHBRVHRtPDK1TFe', 'custom_ensemble_model.pth')
+    
+    try:
+        # Load the model state dictionary
+        model.load_state_dict(torch.load('custom_ensemble_model.pth', map_location=torch.device('cpu')))
+        model.eval()  # Set the model to evaluation mode
+        st.success("Model loaded successfully.")
+    except FileNotFoundError:
+        st.error("Model file not found after download. Please check your download logic.")
+    except Exception as e:
+        st.error(f"An error occurred while loading the model: {str(e)}")
+
     return model
 
 # Load the model
 model = load_model()
 
-# Define the Streamlit interface
-st.title("Vape Image Classifier")
-st.write("Upload an image and the model will classify it as either **Vape** or **Not Vape**.")
-
-# Allow user to upload an image
-uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "png", "jpeg"])
-
-if uploaded_file is not None:
-    # Load the image and display it
-    image = Image.open(uploaded_file)
-    st.image(image, caption='Uploaded Image.', use_column_width=True)
-    st.write("")
-    st.write("Classifying...")
-
-    # Preprocess the image
-    image = image.convert('RGB')  # Ensure it's in RGB mode
-    image = transform(image).unsqueeze(0)  # Apply transformations and add batch dimension
-
-    # Perform the prediction
-    with torch.no_grad():
-        output = model(image)
-        prediction = torch.sigmoid(output).item()
-
-    # Display the result
-    threshold = 0.5  # Adjust this if needed
-    if prediction > threshold:
-        st.write("The image is classified as: **Vape**")
-    else:
-        st.write("The image is classified as: **Not Vape**")
+# Streamlit interface code continues...
