@@ -2,7 +2,7 @@ import os
 import streamlit as st
 import torch
 import torch.nn as nn
-import requests  # Import requests for downloading files
+import requests
 from transformers import ViTForImageClassification
 
 # Define the CustomEnsemble class using ViT model
@@ -11,7 +11,7 @@ class CustomEnsemble(nn.Module):
         super(CustomEnsemble, self).__init__()
         self.model_vit = ViTForImageClassification.from_pretrained(
             'google/vit-large-patch16-224',
-            num_labels=1,
+            num_labels=1,  # Adjust for your specific task
             ignore_mismatched_sizes=True
         )
         self.dropout = nn.Dropout(p=0.3)
@@ -34,7 +34,7 @@ def download_file_from_google_drive(file_id, destination):
         st.error("Error downloading the file. Please check the file ID or permissions.")
 
 # Load the trained model
-@st.cache_data
+@st.cache_resource
 def load_model():
     model = CustomEnsemble()
     
@@ -49,8 +49,8 @@ def load_model():
             return None
 
     try:
-        # Load the model state dictionary
-        model.load_state_dict(torch.load('custom_ensemble_model.pth', map_location=torch.device('cpu')))
+        # Load the model state dictionary with weights_only=True
+        model.load_state_dict(torch.load('custom_ensemble_model.pth', map_location=torch.device('cpu'), weights_only=True))
         model.eval()  # Set the model to evaluation mode
         st.success("Model loaded successfully.")
     except FileNotFoundError:
