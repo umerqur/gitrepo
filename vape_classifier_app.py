@@ -4,6 +4,14 @@ import torch.nn as nn
 import torchvision.transforms as transforms
 from PIL import Image
 from transformers import ViTForImageClassification
+import requests  # Make sure to import requests
+
+# Function to download the model from Google Drive
+def download_file_from_google_drive(file_id, destination):
+    URL = f'https://drive.google.com/uc?id={file_id}'
+    response = requests.get(URL)
+    with open(destination, 'wb') as f:
+        f.write(response.content)
 
 # Define the CustomEnsemble class using ViT model
 class CustomEnsemble(nn.Module):
@@ -37,6 +45,8 @@ transform = transforms.Compose([
 @st.cache(allow_output_mutation=True)
 def load_model():
     model = CustomEnsemble()
+    # Use the file ID to download the model file from Google Drive
+    download_file_from_google_drive('1aeY1XyB1SgVhP4iHKUHBRVHRtPDK1TFe', 'custom_ensemble_model.pth')
     model.load_state_dict(torch.load('custom_ensemble_model.pth', map_location=torch.device('cpu')))
     model.eval()  # Set the model to evaluation mode
     return model
