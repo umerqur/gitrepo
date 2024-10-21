@@ -34,7 +34,7 @@ def download_file_from_google_drive(file_id, destination):
         st.error("Error downloading the file. Please check the file ID or permissions.")
 
 # Load the trained model
-@st.cache_data(allow_output_mutation=True)
+@st.cache_data
 def load_model():
     model = CustomEnsemble()
     
