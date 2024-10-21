@@ -34,15 +34,20 @@ def download_file_from_google_drive(file_id, destination):
         st.error("Error downloading the file. Please check the file ID or permissions.")
 
 # Load the trained model
-@st.cache_resource(allow_output_mutation=True)
+@st.cache_data(allow_output_mutation=True)
 def load_model():
     model = CustomEnsemble()
     
     # Check if the model file already exists
     if not os.path.exists('custom_ensemble_model.pth'):
-        st.info("Downloading model...")
+        st.info("Model file not found. Downloading...")
         download_file_from_google_drive('1aeY1XyB1SgVhP4iHKUHBRVHRtPDK1TFe', 'custom_ensemble_model.pth')
-    
+        
+        # Check again if the model was downloaded
+        if not os.path.exists('custom_ensemble_model.pth'):
+            st.error("Failed to download the model. Please check the file ID and permissions.")
+            return None
+
     try:
         # Load the model state dictionary
         model.load_state_dict(torch.load('custom_ensemble_model.pth', map_location=torch.device('cpu')))
