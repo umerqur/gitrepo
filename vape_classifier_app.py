@@ -42,7 +42,7 @@ transform = transforms.Compose([
 ])
 
 # Load the trained model
-@st.cache(allow_output_mutation=True)
+@st.cache_resource(allow_output_mutation=True)
 def load_model():
     model = CustomEnsemble()
     # Use the file ID to download the model file from Google Drive
